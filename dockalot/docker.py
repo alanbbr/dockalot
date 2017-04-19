@@ -119,6 +119,13 @@ def load_configuration_file(filename):
     return (config, playbook_text)
 
 
+def connect_docker(config):
+    kwargs = docker.utils.kwargs_from_env()
+    if 'DOCKER_CLIENT_TIMEOUT' in os.environ:
+        kwargs['timeout'] = int(os.environ['DOCKER_CLIENT_TIMEOUT'])
+    return docker.Client(version='auto', **kwargs)
+
+
 def pull_base_image(config, docker_client):
     """
     Pulls the base image if it's not already present. If the option to always
@@ -307,14 +314,7 @@ def main():
     keep_container = args.keep_on_failure
     try:
         logger.debug("Connecting to Docker daemon")
-        to = 60
-        if 'DOCKER_CLIENT_TIMEOUT' in os.environ:
-            to = int(os.environ['DOCKER_CLIENT_TIMEOUT'])
-        try:
-            docker_client = docker.from_env(version='auto', timeout=to)
-        except TypeError:
-            logger.warn("docker-py version does not support timeout parameter")
-            docker_client = docker.from_env(version='auto')
+        docker_client = connect_docker(config)
 
         pull_base_image(config, docker_client)
 
