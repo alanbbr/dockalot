@@ -184,6 +184,7 @@ class Config(BaseConfigDict):
         if args.ansible_args is not None:
             self.items['ansible_args'] = args.ansible_args
         self.items['docker'].merge_command_line_args(args)
+        self.items['privileged'] = args.privileged
 
 
 # vim:set ts=4 sw=4 expandtab:

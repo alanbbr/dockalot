@@ -74,6 +74,8 @@ def parse_args(args=None):
     parser.add_argument('-t', dest='tag', action='append',
         help='A name and optional tag (in the name:tag) format. This option '
              'can be specified multiple times to apply multiple tags')
+    parser.add_argument('--privileged', action='store_true',
+        help='Run the build container as privileged (for systemd, etc.)')
 
     # TODO pass-thru to ansible
     #   -M --module-path
@@ -161,7 +163,8 @@ def make_container(config, docker_client):
     container = docker_client.create_container(
         config['docker']['base_image'],
         command='sleep 360000',
-        networking_config=networking_config)
+        networking_config=networking_config,
+        privileged=config['privileged'])
 
     if container['Warnings'] is not None:
         # I have never seen this set but display it anyway
@@ -304,9 +307,9 @@ def main():
     keep_container = args.keep_on_failure
     try:
         logger.debug("Connecting to Docker daemon")
-        to=60
+        to = 60
         if 'DOCKER_CLIENT_TIMEOUT' in os.environ:
-            to=int(os.environ['DOCKER_CLIENT_TIMEOUT'])
+            to = int(os.environ['DOCKER_CLIENT_TIMEOUT'])
         try:
             docker_client = docker.from_env(version='auto', timeout=to)
         except TypeError:
