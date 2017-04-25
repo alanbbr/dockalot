@@ -69,13 +69,13 @@ def parse_args(args=None):
     parser.add_argument('--network',
         help='The name of a user-defined network to add the build container '
             'to while building the image')
+    parser.add_argument('--privileged', action='store_true',
+        help='Run the build container as privileged (for systemd, etc.)')
     parser.add_argument('--pull', action='store_true',
         help='Always pull down the latest base image')
     parser.add_argument('-t', dest='tag', action='append',
         help='A name and optional tag (in the name:tag) format. This option '
              'can be specified multiple times to apply multiple tags')
-    parser.add_argument('--privileged', action='store_true',
-        help='Run the build container as privileged (for systemd, etc.)')
 
     # TODO pass-thru to ansible
     #   -M --module-path
@@ -156,6 +156,8 @@ def make_container(config, docker_client):
     Creates and starts the container that ansible will run against.
     """
     # Generate optional networking config
+    host_config = docker_client.create_host_config(
+        privileged=config['privileged'])
     networking_config = None
     if config['build_network'] is not None:
         try:
@@ -170,8 +172,8 @@ def make_container(config, docker_client):
     container = docker_client.create_container(
         config['docker']['base_image'],
         command='sleep 360000',
-        networking_config=networking_config,
-        privileged=config['privileged'])
+        host_config=host_config,
+        networking_config=networking_config)
 
     if container['Warnings'] is not None:
         # I have never seen this set but display it anyway
